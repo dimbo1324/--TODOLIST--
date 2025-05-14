@@ -1,15 +1,24 @@
-import { fetchTasks, addTask, updateTask, deleteTask, fetchSubtasks, addSubtask } from '../utils/apiClient.js';
+
+import {
+    fetchTasks,
+    addTask,
+    updateTask,
+    deleteTask,
+    fetchSubtasks,
+    addSubtask,
+    deleteSubtask
+} from '../utils/apiClient.js';
 
 export function initStore() {
     let tasks = [];
+
     const emitter = {
         events: {},
         emit(event, data) {
-            if (this.events[event]) this.events[event].forEach(cb => cb(data));
+            (this.events[event] || []).forEach(cb => cb(data));
         },
         subscribe(event, cb) {
-            if (!this.events[event]) this.events[event] = [];
-            this.events[event].push(cb);
+            (this.events[event] ||= []).push(cb);
         }
     };
 
@@ -29,6 +38,7 @@ export function initStore() {
             tasks.push(newTask);
             emitter.emit('update', tasks);
         },
+
         addSubtask: async (taskId, title) => {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
@@ -37,6 +47,7 @@ export function initStore() {
                 emitter.emit('update', tasks);
             }
         },
+
         selectTask: async (taskId) => {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
@@ -45,21 +56,39 @@ export function initStore() {
                 emitter.emit('update', tasks);
             }
         },
-        selectSubtask: (taskId, subtaskId) => {
+
+        selectSubtask: async (taskId, subtaskId) => {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
                 const subtask = task.subtasks.find(st => st.id === subtaskId);
-                if (subtask) subtask.completed = !subtask.completed;
-                emitter.emit('update', tasks);
+                if (subtask) {
+                    subtask.completed = !subtask.completed;
+                    await fetch(`${API_URL}/subtasks/${subtaskId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ completed: subtask.completed }),
+                    });
+                    emitter.emit('update', tasks);
+                }
             }
         },
+
         removeSelected: async () => {
             for (let task of tasks) {
-                if (task.completed) await deleteTask(task.id);
+                if (task.completed) {
+                    await deleteTask(task.id);
+                    task.deleted = true;
+                }
+                for (let st of task.subtasks) {
+                    if (st.completed) {
+                        await deleteSubtask(st.id);
+                        st.deleted = true;
+                    }
+                }
             }
-            tasks = tasks.filter(t => !t.completed);
             emitter.emit('update', tasks);
         },
+
         getAll: () => tasks,
         subscribe: (event, cb) => emitter.subscribe(event, cb)
     };
