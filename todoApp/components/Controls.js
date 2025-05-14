@@ -1,27 +1,29 @@
 export function renderControls(store) {
     const container = document.createElement('div');
     const btnAdd = document.createElement('button');
-    const btnRemove = document.createElement('button');
+    const btnToggleList = document.createElement('button');
     const btnRemoveSelected = document.createElement('button');
     btnAdd.textContent = 'Добавить задачу';
-    btnRemove.textContent = 'Удалить задачу';
+    btnToggleList.textContent = 'Свернуть список';
     btnRemoveSelected.textContent = 'Удалить выбранные';
-    btnRemove.disabled = true;
+    btnRemoveSelected.disabled = true;
+    let listVisible = true;
     store.subscribe('update', tasks => {
-        btnRemove.disabled = tasks.length === 0;
+        const hasSelected = tasks.some(t => t.selected || t.subtasks.some(st => st.selected));
+        btnRemoveSelected.disabled = !hasSelected;
     });
     btnAdd.addEventListener('click', () => {
         const title = prompt('Название новой задачи:');
         if (title) store.addTask(title);
     });
-    btnRemove.addEventListener('click', () => {
-        const all = store.getAll();
-        if (!all.length) return;
-        store.removeTask(all[all.length - 1].id);
+    btnToggleList.addEventListener('click', () => {
+        listVisible = !listVisible;
+        btnToggleList.textContent = listVisible ? 'Свернуть список' : 'Развернуть список';
+        document.getElementById('taskList').style.display = listVisible ? 'block' : 'none';
     });
     btnRemoveSelected.addEventListener('click', () => {
         store.removeSelected();
     });
-    container.append(btnAdd, btnRemove, btnRemoveSelected);
+    container.append(btnAdd, btnToggleList, btnRemoveSelected);
     return container;
 }

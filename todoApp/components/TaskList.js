@@ -1,6 +1,6 @@
-import { renderSubtaskItem } from './SubtaskItem.js';
 export function renderTaskList(store) {
     const ul = document.createElement('ul');
+    ul.id = 'taskList';
     function redraw(tasks) {
         ul.innerHTML = '';
         tasks.forEach(t => {
@@ -13,7 +13,7 @@ export function renderTaskList(store) {
             li.append(checkbox);
             li.append(t.title + (t.completed ? ' ✔' : ''));
             li.addEventListener('click', (e) => {
-                if (e.target !== checkbox) {
+                if (e.target !== checkbox && !li.querySelector('textarea')) {
                     const textarea = document.createElement('textarea');
                     const btnAccept = document.createElement('button');
                     const btnCancel = document.createElement('button');
@@ -32,6 +32,8 @@ export function renderTaskList(store) {
                         li.removeChild(btnCancel);
                     });
                     li.append(textarea, btnAccept, btnCancel);
+                    textarea.focus();
+                    e.stopPropagation();
                 }
             });
             const subUl = document.createElement('ul');
@@ -52,4 +54,9 @@ export function renderTaskList(store) {
     redraw(store.getAll());
     store.subscribe('update', redraw);
     return ul;
+}
+function renderSubtaskItem(subtask, store, taskId) {
+    const li = document.createElement('li');
+    li.textContent = subtask.title + (subtask.completed ? ' ✔' : '');
+    return li;
 }
