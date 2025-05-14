@@ -1,4 +1,77 @@
-.deleted {
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f2f5;
+  margin: 0;
+  padding: 20px;
+}
+#todoApp {
+  max-width: 600px;
+  margin: 0 auto;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+button {
+  padding: 10px 15px;
+  margin: 5px;
+  border: none;
+  border-radius: 5px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+button:hover {
+  background-color: #0056b3;
+}
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+li {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+}
+li:last-child {
+  border-bottom: none;
+}
+li input[type="checkbox"] {
+  margin-right: 10px;
+}
+li.deleted {
   text-decoration: line-through;
   color: #888;
+}
+ul ul {
+  margin-left: 20px;
+  border-left: 2px solid #007bff;
+  padding-left: 10px;
+}
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  resize: none;
+}
+li button {
+  margin-left: 10px;
+  background-color: #28a745;
+}
+li button:hover {
+  background-color: #218838;
+}
+li button:last-child {
+  background-color: #dc3545;
+}
+li button:last-child:hover {
+  background-color: #c82333;
 }
