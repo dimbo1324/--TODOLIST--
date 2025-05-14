@@ -6,9 +6,7 @@ const pool = new Pool({
     password: '545687',
     port: 5432,
 });
-
 module.exports = pool;
-
 pool.connect((err, client, release) => {
     if (err) {
         return console.error('Ошибка подключения к базе данных:', err.stack);
