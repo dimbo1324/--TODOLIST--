@@ -16,7 +16,7 @@ export function initStore() {
     ];
     return {
         subscribe: emitter.subscribe.bind(emitter),
-        _emit: emitter.emit.bind(emitter),
+        emit: emitter.emit.bind(emitter),
         getAll: () => tasks,
         addTask: title => {
             tasks.push(new Task(nextId++, title));
