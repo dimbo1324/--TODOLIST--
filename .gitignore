@@ -1,3 +1,4 @@
-notes.txt
 *.idea
-node_modules
+/todoBackend/node_modules/
+/todoBackend/package-lock.json
+/todoBackend/package.json
