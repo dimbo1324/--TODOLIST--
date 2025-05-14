@@ -1,4 +1,3 @@
-
 import {
     fetchTasks,
     addTask,
@@ -8,10 +7,8 @@ import {
     addSubtask,
     deleteSubtask
 } from '../utils/apiClient.js';
-
 export function initStore() {
     let tasks = [];
-
     const emitter = {
         events: {},
         emit(event, data) {
@@ -21,7 +18,6 @@ export function initStore() {
             (this.events[event] ||= []).push(cb);
         }
     };
-
     async function loadTasks() {
         tasks = await fetchTasks();
         for (let task of tasks) {
@@ -30,7 +26,6 @@ export function initStore() {
         emitter.emit('update', tasks);
     }
     loadTasks();
-
     return {
         addTask: async (title) => {
             const newTask = await addTask(title);
@@ -38,7 +33,6 @@ export function initStore() {
             tasks.push(newTask);
             emitter.emit('update', tasks);
         },
-
         addSubtask: async (taskId, title) => {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
@@ -47,7 +41,6 @@ export function initStore() {
                 emitter.emit('update', tasks);
             }
         },
-
         selectTask: async (taskId) => {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
@@ -56,7 +49,6 @@ export function initStore() {
                 emitter.emit('update', tasks);
             }
         },
-
         selectSubtask: async (taskId, subtaskId) => {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
@@ -72,7 +64,6 @@ export function initStore() {
                 }
             }
         },
-
         removeSelected: async () => {
             for (let task of tasks) {
                 if (task.completed) {
@@ -88,7 +79,6 @@ export function initStore() {
             }
             emitter.emit('update', tasks);
         },
-
         getAll: () => tasks,
         subscribe: (event, cb) => emitter.subscribe(event, cb)
     };

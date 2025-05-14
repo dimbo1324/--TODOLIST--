@@ -1,5 +1,4 @@
 import { Subtask } from './Subtask.js';
-
 export class Task {
     constructor(
         id,
@@ -20,7 +19,6 @@ export class Task {
         this.selected = selected;
         this.deleted = deleted;
     }
-
     toggle() {
         this.completed = !this.completed;
         if (this.completed) {

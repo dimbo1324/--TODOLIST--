@@ -6,11 +6,9 @@ export class Subtask {
         this.selected = selected;
         this.deleted = deleted;
     }
-
     toggle() {
         this.completed = !this.completed;
     }
-
     markCompleted() {
         this.completed = true;
     }
