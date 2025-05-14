@@ -1,3 +1,5 @@
+import { fetchTasks, addTask, updateTask, deleteTask, fetchSubtasks, addSubtask } from '../utils/apiClient.js';
+
 export function initStore() {
     let tasks = [];
     const emitter = {
@@ -10,65 +12,55 @@ export function initStore() {
             this.events[event].push(cb);
         }
     };
-    let idCounter = 0;
-    const tasksProxy = new Proxy(tasks, {
-        set(target, prop, value) {
-            target[prop] = value;
-            emitter.emit('update', tasks);
-            return true;
+
+    async function loadTasks() {
+        tasks = await fetchTasks();
+        for (let task of tasks) {
+            task.subtasks = await fetchSubtasks(task.id);
         }
-    });
+        emitter.emit('update', tasks);
+    }
+    loadTasks();
+
     return {
-        addTask: (title) => {
-            tasksProxy.push({
-                id: idCounter++,
-                title,
-                completed: false,
-                selected: false,
-                deleted: false,
-                subtasks: []
-            });
+        addTask: async (title) => {
+            const newTask = await addTask(title);
+            newTask.subtasks = [];
+            tasks.push(newTask);
+            emitter.emit('update', tasks);
         },
-        addSubtask: (taskId, title) => {
-            const task = tasksProxy.find(t => t.id === taskId);
+        addSubtask: async (taskId, title) => {
+            const task = tasks.find(t => t.id === taskId);
             if (task) {
-                task.subtasks.push({
-                    id: idCounter++,
-                    title,
-                    completed: false,
-                    selected: false,
-                    deleted: false
-                });
-                emitter.emit('update', tasksProxy);
+                const newSubtask = await addSubtask(taskId, title);
+                task.subtasks.push(newSubtask);
+                emitter.emit('update', tasks);
             }
         },
-        selectTask: (taskId) => {
-            const task = tasksProxy.find(t => t.id === taskId);
-            if (task) task.selected = !task.selected;
-            emitter.emit('update', tasksProxy);
+        selectTask: async (taskId) => {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                await updateTask(taskId, task.completed);
+                emitter.emit('update', tasks);
+            }
         },
         selectSubtask: (taskId, subtaskId) => {
-            const task = tasksProxy.find(t => t.id === taskId);
+            const task = tasks.find(t => t.id === taskId);
             if (task) {
                 const subtask = task.subtasks.find(st => st.id === subtaskId);
-                if (subtask) subtask.selected = !subtask.selected;
-                emitter.emit('update', tasksProxy);
+                if (subtask) subtask.completed = !subtask.completed;
+                emitter.emit('update', tasks);
             }
         },
-        removeSelected: () => {
-            tasksProxy.forEach(t => {
-                if (t.selected) t.deleted = true;
-                t.subtasks.forEach(st => {
-                    if (st.selected) st.deleted = true;
-                });
-            });
-            tasksProxy.forEach(t => {
-                t.subtasks = t.subtasks.filter(st => !st.deleted);
-            });
-            tasksProxy.splice(0, tasksProxy.length, ...tasksProxy.filter(t => !t.deleted));
-            emitter.emit('update', tasksProxy);
+        removeSelected: async () => {
+            for (let task of tasks) {
+                if (task.completed) await deleteTask(task.id);
+            }
+            tasks = tasks.filter(t => !t.completed);
+            emitter.emit('update', tasks);
         },
-        getAll: () => tasksProxy,
+        getAll: () => tasks,
         subscribe: (event, cb) => emitter.subscribe(event, cb)
     };
 }
