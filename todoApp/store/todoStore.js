@@ -17,50 +17,84 @@ export function initStore() {
         tasks = await fetchTasks();
         for (let task of tasks) {
             task.subtasks = await fetchSubtasks(task.id);
+            task.selected = false;
+            task.deleted = false;
+            task.subtasks.forEach(st => {
+                st.selected = false;
+                st.deleted = false;
+            });
         }
-        emitter.emit('update', tasks);
+        emitter.emit('update', tasksProxy);
     }
     loadTasks();
+
+    const tasksProxy = new Proxy(tasks, {
+        set(target, prop, value) {
+            target[prop] = value;
+            emitter.emit('update', tasks);
+            console.log(`Изменение в задачах: ${JSON.stringify(tasks)}`);
+            if (Notification.permission === 'granted') {
+                new Notification('Изменение в задачах', {
+                    body: `Список задач обновлён: ${JSON.stringify(tasks)}`,
+                });
+            }
+            return true;
+        }
+    });
 
     return {
         addTask: async (title) => {
             const newTask = await addTask(title);
             newTask.subtasks = [];
-            tasks.push(newTask);
-            emitter.emit('update', tasks);
+            newTask.selected = false;
+            newTask.deleted = false;
+            tasksProxy.push(newTask);
         },
         addSubtask: async (taskId, title) => {
-            const task = tasks.find(t => t.id === taskId);
+            const task = tasksProxy.find(t => t.id === taskId);
             if (task) {
                 const newSubtask = await addSubtask(taskId, title);
+                newSubtask.selected = false;
+                newSubtask.deleted = false;
                 task.subtasks.push(newSubtask);
-                emitter.emit('update', tasks);
+                emitter.emit('update', tasksProxy);
             }
         },
-        selectTask: async (taskId) => {
-            const task = tasks.find(t => t.id === taskId);
+        selectTask: (taskId) => {
+            const task = tasksProxy.find(t => t.id === taskId);
             if (task) {
-                task.completed = !task.completed;
-                await updateTask(taskId, task.completed);
-                emitter.emit('update', tasks);
+                task.selected = !task.selected;
+                emitter.emit('update', tasksProxy);
             }
         },
         selectSubtask: (taskId, subtaskId) => {
-            const task = tasks.find(t => t.id === taskId);
+            const task = tasksProxy.find(t => t.id === taskId);
             if (task) {
                 const subtask = task.subtasks.find(st => st.id === subtaskId);
-                if (subtask) subtask.completed = !subtask.completed;
-                emitter.emit('update', tasks);
+                if (subtask) {
+                    subtask.selected = !subtask.selected;
+                    emitter.emit('update', tasksProxy);
+                }
             }
         },
         removeSelected: async () => {
-            for (let task of tasks) {
-                if (task.completed) await deleteTask(task.id);
+            for (let task of tasksProxy) {
+                if (task.selected && !task.deleted) {
+                    task.deleted = true;
+                    await deleteTask(task.id);
+                    task.subtasks.forEach(st => {
+                        st.deleted = true;
+                    });
+                }
+                task.subtasks.forEach(st => {
+                    if (st.selected && !st.deleted) {
+                        st.deleted = true;
+                    }
+                });
             }
-            tasks = tasks.filter(t => !t.completed);
-            emitter.emit('update', tasks);
+            emitter.emit('update', tasksProxy);
         },
-        getAll: () => tasks,
+        getAll: () => tasksProxy,
         subscribe: (event, cb) => emitter.subscribe(event, cb)
     };
 }
